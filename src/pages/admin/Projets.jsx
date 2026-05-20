@@ -94,12 +94,24 @@ export default function AdminProjets() {
                 <h3 className="font-heading font-bold text-white mb-1">{p.titre}</h3>
                 <p className="text-gray-500 text-xs line-clamp-2 mb-3">{p.description}</p>
                 {p.technologies && (
-                  <div className="flex flex-wrap gap-1">
-                    {(Array.isArray(p.technologies) ? p.technologies : p.technologies.split(',')).slice(0,3).map(t => (
-                      <span key={t} className="badge bg-white/5 text-gray-500 text-xs">{t.trim()}</span>
-                    ))}
-                  </div>
-                )}
+  <div className="flex flex-wrap gap-2">
+    {(Array.isArray(p.technologies)
+      ? p.technologies
+      : typeof p.technologies === 'string'
+        ? p.technologies.split(',')
+        : []
+    )
+      .slice(0, 4)
+      .map((t, i) => (
+        <span
+          key={i}
+          className="badge bg-white/5 text-gray-400"
+        >
+          {String(t).trim()}
+        </span>
+      ))}
+  </div>
+)}
               </div>
             </motion.div>
           ))}
