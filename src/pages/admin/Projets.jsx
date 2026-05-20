@@ -26,7 +26,14 @@ export default function AdminProjets() {
   const openCreate = () => { setEditing(null); setForm(EMPTY); setModal(true) }
   const openEdit   = (p) => {
     setEditing(p.id)
-    setForm({ ...p, technologies: Array.isArray(p.technologies) ? p.technologies.join(', ') : p.technologies || '' })
+    setForm({
+  ...p,
+  technologies: Array.isArray(p.technologies)
+    ? p.technologies.join(', ')
+    : typeof p.technologies === 'string'
+      ? p.technologies
+      : ''
+})
     setModal(true)
   }
   const closeModal = () => { setModal(false); setEditing(null); setForm(EMPTY) }
@@ -34,7 +41,15 @@ export default function AdminProjets() {
   const handleSave = async (e) => {
     e.preventDefault()
     setSaving(true)
-    const payload = { ...form, technologies: form.technologies.split(',').map(t => t.trim()).filter(Boolean) }
+    const payload = {
+  ...form,
+  technologies: typeof form.technologies === 'string'
+    ? form.technologies
+        .split(',')
+        .map(t => t.trim())
+        .filter(Boolean)
+    : []
+}
     try {
       if (editing) await api.put(`/admin/projets/${editing}`, payload)
       else await api.post('/admin/projets', payload)
@@ -93,25 +108,29 @@ export default function AdminProjets() {
                 </div>
                 <h3 className="font-heading font-bold text-white mb-1">{p.titre}</h3>
                 <p className="text-gray-500 text-xs line-clamp-2 mb-3">{p.description}</p>
-                {p.technologies && (
-  <div className="flex flex-wrap gap-2">
-    {(Array.isArray(p.technologies)
-      ? p.technologies
-      : typeof p.technologies === 'string'
-        ? p.technologies.split(',')
-        : []
-    )
-      .slice(0, 4)
-      .map((t, i) => (
-        <span
-          key={i}
-          className="badge bg-white/5 text-gray-400"
-        >
-          {String(t).trim()}
-        </span>
-      ))}
-  </div>
-)}
+                {(() => {
+  const techs = Array.isArray(p.technologies)
+    ? p.technologies
+    : typeof p.technologies === 'string'
+      ? p.technologies.split(',')
+      : []
+
+  return techs.length > 0 ? (
+    <div className="flex flex-wrap gap-2">
+      {techs
+        .filter(Boolean)
+        .slice(0, 4)
+        .map((t, i) => (
+          <span
+            key={i}
+            className="badge bg-white/5 text-gray-400"
+          >
+            {String(t).trim()}
+          </span>
+        ))}
+    </div>
+  ) : null
+})()}
               </div>
             </motion.div>
           ))}
