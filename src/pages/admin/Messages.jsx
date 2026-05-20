@@ -1,9 +1,16 @@
 // ════════════════════════════════════════════════════════════
 // src/pages/admin/Messages.jsx
 // ════════════════════════════════════════════════════════════
+
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Mail, Eye, Trash2, CheckCheck } from 'lucide-react'
+import {
+  Mail,
+  Eye,
+  Trash2,
+  CheckCheck
+} from 'lucide-react'
+
 import toast from 'react-hot-toast'
 import api from '../../lib/api'
 
@@ -19,11 +26,21 @@ export default function AdminMessages() {
 
       const r = await api.get('/admin/messages')
 
-      setMessages(r.data.data || r.data)
+      const data = Array.isArray(r.data)
+        ? r.data
+        : Array.isArray(r.data?.data)
+          ? r.data.data
+          : []
+
+      setMessages(data)
 
     } catch (error) {
 
       console.error(error)
+
+      setMessages([])
+
+      toast.error('Erreur chargement messages')
 
     }
   }
@@ -34,6 +51,8 @@ export default function AdminMessages() {
 
   const view = async (msg) => {
 
+    if (!msg) return
+
     setSelected(msg)
 
     if (!msg.lu) {
@@ -43,12 +62,19 @@ export default function AdminMessages() {
         await api.patch(`/admin/messages/${msg.id}/marquer-lu`)
 
         setMessages(prev =>
-          prev.map(m =>
-            m.id === msg.id
-              ? { ...m, lu: true }
-              : m
-          )
+          Array.isArray(prev)
+            ? prev.map(m =>
+                m.id === msg.id
+                  ? { ...m, lu: true }
+                  : m
+              )
+            : []
         )
+
+        setSelected(prev => ({
+          ...prev,
+          lu: true
+        }))
 
       } catch (error) {
 
@@ -59,6 +85,8 @@ export default function AdminMessages() {
   }
 
   const del = async (id) => {
+
+    if (!id) return
 
     if (!confirm('Supprimer ce message ?')) return
 
@@ -81,31 +109,40 @@ export default function AdminMessages() {
     }
   }
 
-  const filtered = messages.filter(m =>
-    filter === 'all'
-      ? true
-      : filter === 'unread'
-        ? !m.lu
-        : m.lu
-  )
+  const filtered = Array.isArray(messages)
+    ? messages.filter(m =>
+        filter === 'all'
+          ? true
+          : filter === 'unread'
+            ? !m?.lu
+            : m?.lu
+      )
+    : []
 
-  const unread = messages.filter(m => !m.lu).length
+  const unread = Array.isArray(messages)
+    ? messages.filter(m => !m?.lu).length
+    : 0
 
   return (
+
     <div className="space-y-6">
 
       <div className="flex items-center justify-between">
 
         <div>
+
           <h1 className="font-heading text-2xl font-bold text-white">
             Messages
           </h1>
 
           {unread > 0 && (
+
             <p className="text-brand-400 text-sm">
               {unread} non lu{unread > 1 ? 's' : ''}
             </p>
+
           )}
+
         </div>
 
         <div className="flex gap-2">
@@ -136,23 +173,30 @@ export default function AdminMessages() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
+        {/* Liste Messages */}
+
         <div className="space-y-2">
 
           {filtered.length === 0 && (
+
             <div className="card-dark p-10 text-center text-gray-500">
+
               <Mail className="w-10 h-10 mx-auto mb-2 opacity-30" />
+
               <p>Aucun message</p>
+
             </div>
+
           )}
 
           {filtered.map(msg => (
 
             <motion.div
-              key={msg.id}
+              key={msg?.id}
               layout
               onClick={() => view(msg)}
               className={`card-dark p-4 cursor-pointer hover:border-brand-500/30 transition-all ${
-                selected?.id === msg.id
+                selected?.id === msg?.id
                   ? 'border-brand-500/50'
                   : ''
               }`}
@@ -164,32 +208,34 @@ export default function AdminMessages() {
 
                   <div className="flex items-center gap-2">
 
-                    {!msg.lu && (
+                    {!msg?.lu && (
                       <span className="w-2 h-2 bg-brand-400 rounded-full flex-shrink-0" />
                     )}
 
                     <span className={`text-sm font-medium truncate ${
-                      !msg.lu
+                      !msg?.lu
                         ? 'text-white'
                         : 'text-gray-300'
                     }`}>
-                      {msg.nom}
+                      {msg?.nom || 'Sans nom'}
                     </span>
 
-                    {msg.service && (
+                    {msg?.service && (
+
                       <span className="badge bg-brand-500/10 text-brand-400 text-xs flex-shrink-0">
                         {msg.service}
                       </span>
+
                     )}
 
                   </div>
 
                   <p className="text-gray-500 text-xs truncate mt-0.5">
-                    {msg.message}
+                    {msg?.message || '-'}
                   </p>
 
                   <p className="text-gray-600 text-xs mt-1">
-                    {msg.email}
+                    {msg?.email || '-'}
                   </p>
 
                 </div>
@@ -197,7 +243,7 @@ export default function AdminMessages() {
                 <button
                   onClick={(e) => {
                     e.stopPropagation()
-                    del(msg.id)
+                    del(msg?.id)
                   }}
                   className="p-1 text-gray-600 hover:text-red-400 flex-shrink-0"
                 >
@@ -212,6 +258,8 @@ export default function AdminMessages() {
 
         </div>
 
+        {/* Détails */}
+
         <div className="card-dark">
 
           {selected ? (
@@ -223,27 +271,34 @@ export default function AdminMessages() {
                 <div>
 
                   <h2 className="font-heading font-bold text-white text-lg">
-                    {selected.nom}
+                    {selected?.nom || 'Sans nom'}
                   </h2>
 
-                  <a
-                    href={`mailto:${selected.email}`}
-                    className="text-brand-400 text-sm hover:underline"
-                  >
-                    {selected.email}
-                  </a>
+                  {selected?.email && (
+
+                    <a
+                      href={`mailto:${selected.email}`}
+                      className="text-brand-400 text-sm hover:underline"
+                    >
+                      {selected.email}
+                    </a>
+
+                  )}
 
                 </div>
 
                 <div className="flex gap-2">
 
                   <span className="badge bg-green-500/10 text-green-400 flex items-center gap-1">
+
                     <CheckCheck className="w-3 h-3" />
+
                     Lu
+
                   </span>
 
                   <button
-                    onClick={() => del(selected.id)}
+                    onClick={() => del(selected?.id)}
                     className="btn-ghost p-2 hover:text-red-400"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -256,17 +311,24 @@ export default function AdminMessages() {
               <div className="grid grid-cols-2 gap-3 mb-5">
 
                 {[
-                  ['Téléphone', selected.telephone],
-                  ['Entreprise', selected.entreprise],
-                  ['Service', selected.service],
-                  ['Budget', selected.budget]
+                  ['Téléphone', selected?.telephone],
+                  ['Entreprise', selected?.entreprise],
+                  ['Service', selected?.service],
+                  ['Budget', selected?.budget]
                 ].map(([k, v]) => (
 
                   v
                     ? (
                       <div key={k}>
-                        <div className="text-gray-500 text-xs">{k}</div>
-                        <div className="text-white text-sm">{v}</div>
+
+                        <div className="text-gray-500 text-xs">
+                          {k}
+                        </div>
+
+                        <div className="text-white text-sm">
+                          {v}
+                        </div>
+
                       </div>
                     )
                     : null
@@ -276,17 +338,23 @@ export default function AdminMessages() {
               </div>
 
               <div className="bg-dark-700 rounded-xl p-4">
+
                 <p className="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap">
-                  {selected.message}
+                  {selected?.message || 'Aucun contenu'}
                 </p>
+
               </div>
 
-              <a
-                href={`mailto:${selected.email}`}
-                className="btn-primary mt-4 inline-flex"
-              >
-                Répondre par email
-              </a>
+              {selected?.email && (
+
+                <a
+                  href={`mailto:${selected.email}`}
+                  className="btn-primary mt-4 inline-flex"
+                >
+                  Répondre par email
+                </a>
+
+              )}
 
             </div>
 
@@ -295,8 +363,13 @@ export default function AdminMessages() {
             <div className="flex items-center justify-center h-full min-h-[200px] text-gray-600">
 
               <div className="text-center">
+
                 <Eye className="w-10 h-10 mx-auto mb-2 opacity-30" />
-                <p className="text-sm">Sélectionner un message</p>
+
+                <p className="text-sm">
+                  Sélectionner un message
+                </p>
+
               </div>
 
             </div>

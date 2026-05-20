@@ -34,18 +34,25 @@ export default function AdminTemoignages() {
 
   const load = async () => {
 
-    try {
+  try {
 
-      const r = await api.get('/admin/temoignages')
+    const r = await api.get('/admin/temoignages')
 
-      setItems(r.data)
+    const data = Array.isArray(r.data)
+      ? r.data
+      : Array.isArray(r.data?.data)
+        ? r.data.data
+        : []
 
-    } catch (error) {
+    setItems(data)
 
-      console.error(error)
+  } catch (error) {
 
-    }
+    console.error(error)
+    setItems([])
+
   }
+}
 
   useEffect(() => {
     load()
@@ -64,7 +71,10 @@ export default function AdminTemoignages() {
 
     setEdit(t.id)
 
-    setForm(t)
+    setForm({
+  ...EMPTY,
+  ...t
+})
 
     setModal(true)
   }
@@ -187,7 +197,7 @@ export default function AdminTemoignages() {
 
               <div className="flex gap-0.5">
 
-                {[...Array(t.note || 5)].map((_, i) => (
+                {[...Array(Number(t.note) || 5)].map((_, i) => (
 
                   <Star
                     key={i}

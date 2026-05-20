@@ -25,13 +25,25 @@ export default function AdminServices() {
   const [saving, setSaving] = useState(false)
 
   const load = async () => {
-    try {
-      const r = await api.get('/admin/services')
-      setServices(r.data)
-    } catch (error) {
-      console.error(error)
-    }
+  try {
+
+    const r = await api.get('/admin/services')
+
+    const data = Array.isArray(r.data)
+      ? r.data
+      : Array.isArray(r.data?.data)
+        ? r.data.data
+        : []
+
+    setServices(data)
+
+  } catch (error) {
+
+    console.error(error)
+    setServices([])
+
   }
+}
 
   useEffect(() => {
     load()
@@ -45,7 +57,10 @@ export default function AdminServices() {
 
   const openEdit = (s) => {
     setEditing(s.id)
-    setForm(s)
+    setForm({
+  ...EMPTY,
+  ...s
+})
     setModal(true)
   }
 
@@ -129,7 +144,7 @@ export default function AdminServices() {
 
             <div>
               <h3 className="font-heading font-bold text-white">
-                {s.titre}
+                {s.titre || '-'}
               </h3>
 
               <p className="text-gray-500 text-sm">
